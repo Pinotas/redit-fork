@@ -13,142 +13,139 @@ const dbName = "Database1";
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`Servidor está em execução na porta ${port}`);
+  console.log(`Server is initializing ${port}`);
 });
 
 async function start(app) {
   await client.connect();
-  console.log("Conectado com sucesso ao servidor");
+  console.log("Connected with success");
   const db = client.db(dbName);
   const collection = db.collection("documents");
 
   app.listen(process.env.PORT, () => {
-    console.log("Servidor está em execução (Express)");
+    console.log("Server is executing (Express)");
   });
 }
 
-app.post("/comunidades", async (req, res) => {
+app.post("/communities", async (req, res) => {
   try {
-    const { nome, descricao } = req.body;
+    const { name, description } = req.body;
 
-    if (!nome || !descricao) {
+    if (!name || !description) {
       return res
         .status(400)
-        .json({ mensagem: "Nome e descrição são obrigatórios" });
+        .json({ message: "name and description are required" });
     }
 
-    const collection = client.db(dbName).collection("comunidades");
+    const collection = client.db(dbName).collection("communities");
 
-    const novaComunidade = {
-      nome,
-      descricao,
-      dataCriacao: new Date(),
+    const newComunity = {
+      name,
+      description,
+      createdAt: new Date(),
     };
 
-    const resultado = await collection.insertOne(novaComunidade);
+    const result = await collection.insertOne(newComunity);
     res.status(201).json({
-      mensagem: "Comunidade criada com sucesso",
-      id: resultado.insertedId,
+      message: "Comunidade created with success",
+      id: result.insertedId,
     });
   } catch (error) {
-    console.error("Erro ao criar a comunidade:", error);
-    res.status(500).json({ mensagem: "Erro ao criar a comunidade" });
+    console.error("Error creating community:", error);
+    res.status(500).json({ message: "Error creating community:" });
   }
 });
 
-app.post("/comunidades/:comunidadeId/posts", async (req, res) => {
+app.post("/communities/:comunityId/posts", async (req, res) => {
   try {
-    const { comunidadeId } = req.params;
-    const { titulo, conteudo } = req.body;
+    const { comunityId } = req.params;
+    const { title, content } = req.body;
 
-    if (!titulo || !conteudo) {
+    if (!title || !content) {
       return res
         .status(400)
-        .json({ mensagem: "Título e conteúdo são obrigatórios" });
+        .json({ message: "title and content are required" });
     }
 
     const collection = client.db(dbName).collection("posts");
 
     const novoPost = {
-      comunidadeId,
-      titulo,
-      conteudo,
-      dataCriacao: new Date(),
+      comunityId,
+      title,
+      content,
+      createdAt: new Date(),
     };
 
-    const resultado = await collection.insertOne(novoPost);
+    const result = await collection.insertOne(novoPost);
     res
       .status(201)
-      .json({ mensagem: "Post criado com sucesso", id: resultado.insertedId });
+      .json({ message: "Post created with success", id: result.insertedId });
   } catch (error) {
-    console.error("Erro ao criar o post:", error);
-    res.status(500).json({ mensagem: "Erro ao criar o post" });
+    console.error("Error creating post:", error);
+    res.status(500).json({ message: "Error creating post" });
   }
 });
 
-app.get("/comunidades/:comunidadeId/posts", async (req, res) => {
+app.get("/communities/:comunityId/posts", async (req, res) => {
   try {
-    const { comunidadeId } = req.params;
+    const { comunityId } = req.params;
     const collection = client.db(dbName).collection("posts");
-    const posts = await collection.find({ comunidadeId }).toArray();
+    const posts = await collection.find({ comunityId }).toArray();
     res.status(200).json(posts);
   } catch (error) {
-    console.error("Erro ao obter os posts:", error);
-    res.status(500).json({ mensagem: "Erro ao obter os posts" });
+    console.error("Error getting posts:", error);
+    res.status(500).json({ message: "Error getting posts" });
   }
 });
 
-app.get(
-  "/comunidades/:comunidadeId/posts/:postId/comentarios",
-  async (req, res) => {
-    try {
-      const { comunidadeId, postId } = req.params;
-      const collection = client.db(dbName).collection("comentarios");
-      const comentarios = await collection.find({ postId }).toArray();
-      if (comentarios.length === 0) {
-        comentarios.push({
-          postId: postId,
-          texto: "Test Post",
-          autor: "yes",
-        });
-      }
-      res.status(200).json(comentarios);
-    } catch (error) {
-      console.error("Erro ao obter os comentários:", error);
-      res.status(500).json({ mensagem: "Erro ao obter os comentários" });
-    }
-  }
-);
-
-app.put("/comunidades/:comunidadeId/posts/:postId", async (req, res) => {
+app.get("/communities/:comunityId/posts/:postId/comments", async (req, res) => {
   try {
-    const { comunidadeId, postId } = req.params;
-    const { titulo, conteudo } = req.body;
+    const { comunityId, postId } = req.params;
+    const collection = client.db(dbName).collection("comments");
+    const comments = await collection.find({ postId }).toArray();
+    if (comments.length === 0) {
+      comments.push({
+        postId: postId,
+        text: "Test Post",
+        author: "yes",
+      });
+    }
+    res.status(200).json(comments);
+  } catch (error) {
+    console.error("Error getting comments:", error);
+    res.status(500).json({ message: "Error getting comments" });
+  }
+});
 
-    if (!titulo || !conteudo) {
+app.put("/communities/:comunityId/posts/:postId", async (req, res) => {
+  try {
+    const { comunityId, postId } = req.params;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
       return res
         .status(400)
-        .json({ mensagem: "Título e conteúdo são obrigatórios" });
+        .json({ message: "title and content are required" });
     }
 
     const collection = client.db(dbName).collection("posts");
 
-    const resultado = await collection.updateOne(
-      { _id: postId, comunidadeId },
-      { $set: { titulo, conteudo } }
+    const result = await collection.updateOne(
+      { _id: postId, comunityId },
+      { $set: { title, content } }
     );
 
-    if (resultado.modifiedCount === 0) {
-      return res.status(404).json({ mensagem: "Post não encontrado" });
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "Post not found" });
     }
 
-    res.status(200).json({ mensagem: "Post editado com sucesso" });
+    res.status(200).json({ message: "Post edited successfully" });
   } catch (error) {
-    console.error("Erro ao editar o post:", error);
-    res.status(500).json({ mensagem: "Erro ao editar o post" });
+    console.error("Error editing post:", error);
+    res.status(500).json({ message: "Error editing post" });
   }
 });
 
 start(app)
-  .then(() => console.log("Rotina de inicialização concluída"))
-  .catch((err) => console.log("Erro na rotina de inicialização: ", err));
+  .then(() => console.log("Initialization routine complete"))
+  .catch((err) => console.log("Error in initialization routine: ", err));
